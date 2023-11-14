@@ -7,7 +7,6 @@ import androidx.lifecycle.ViewModel;
 public class GalleryViewModel extends ViewModel {
 
     private final MutableLiveData<String> mText;
-    GalleryFragment galleryFragment;
 
     public GalleryViewModel() {
         mText = new MutableLiveData<>();

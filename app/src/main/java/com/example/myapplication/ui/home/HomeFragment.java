@@ -3,7 +3,6 @@ package com.example.myapplication.ui.home;
 import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -20,10 +19,8 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.example.myapplication.R;
 import com.example.myapplication.databinding.FragmentHomeBinding;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
@@ -31,31 +28,20 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 
-import java.util.Objects;
 
 public class HomeFragment extends Fragment {
 
 private FragmentHomeBinding binding;
 private FusedLocationProviderClient fusedLocationClient;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
-
-    public double s;
-    private HomeViewModel homeViewModel;
-
-    public HomeFragment() {
-    }
-
+    private double lat;
+    private double lon;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
             ViewGroup container, Bundle savedInstanceState) {
-        HomeViewModel homeViewModel =
-                new ViewModelProvider(this).get(HomeViewModel.class);
-
     binding = FragmentHomeBinding.inflate(inflater, container, false);
     View root = binding.getRoot();
 
-        final TextView textView = binding.textHome;
-        homeViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(binding.getRoot().getContext());
 
@@ -65,7 +51,6 @@ private FusedLocationProviderClient fusedLocationClient;
             ActivityCompat.requestPermissions((Activity) binding.getRoot().getContext(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_PERMISSION_REQUEST_CODE);
         } else {
             getDeviceLocation();
-
         }
         return root;
     }
@@ -89,8 +74,12 @@ private FusedLocationProviderClient fusedLocationClient;
                 for (Location location : locationResult.getLocations()) {
                     double latitude = location.getLatitude();
                     double longitude = location.getLongitude();
-                    homeViewModel.setLocation(latitude, longitude);
-
+                    lat = latitude;
+                    lon = longitude;
+                    ModelFactory factory = new ModelFactory(lat, lon);
+                    HomeViewModel homeViewModel = new ViewModelProvider(HomeFragment.this, factory).get(HomeViewModel.class);
+                    final TextView textView = binding.textHome;
+                    homeViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
                 }
             }
         };

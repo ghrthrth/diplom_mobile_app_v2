@@ -10,18 +10,10 @@ public class HomeViewModel extends ViewModel {
 
     private final MutableLiveData<String> mText;
 
-    private double latitude;
-    private double longitude;
-
-    public HomeViewModel() {
+    public HomeViewModel(double lat, double lon) {
         mText = new MutableLiveData<>();
-        mText.setValue("This is home fragment" + "::");
-        Log.d("Sex", "ferf" + latitude + " " + longitude);
-    }
-
-    public void setLocation(double latitude, double longitude) {
-        this.latitude = latitude;
-        this.longitude = longitude;
+        mText.setValue("This is home fragment" + lat + " " + lon);
+        //Log.d("Sex", "fe" + id);
     }
 
     public LiveData<String> getText() {

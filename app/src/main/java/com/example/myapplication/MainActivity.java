@@ -18,6 +18,8 @@ import android.widget.TextView;
 
 import com.example.myapplication.ui.gallery.GalleryFragment;
 import com.example.myapplication.ui.home.HomeFragment;
+import com.example.myapplication.ui.home.HomeViewModel;
+import com.example.myapplication.ui.home.ModelFactory;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
