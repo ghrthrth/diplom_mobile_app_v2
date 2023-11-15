@@ -15,7 +15,7 @@ public class GalleryViewModel extends ViewModel {
     private MutableLiveData<String> mText = new MutableLiveData<>();
 
     public void setData(String value) {
-        mText.setValue("Data" + value);
+        mText.setValue("Data: " + value);
     }
 
     public LiveData<String> getData() {

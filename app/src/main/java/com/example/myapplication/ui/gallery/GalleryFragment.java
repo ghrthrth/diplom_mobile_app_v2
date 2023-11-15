@@ -36,7 +36,6 @@ import java.util.List;
 
 public class GalleryFragment extends Fragment {
     MyPhoneStateListener myPhoneStateListener;
-    private GalleryViewModel galleryViewModel;
     public TelephonyManager tel;
     private FragmentSlideshowBinding binding;
 
@@ -55,7 +54,8 @@ public class GalleryFragment extends Fragment {
         // Register the PhoneStateListener to listen for signal strengths
         tel = (TelephonyManager) requireActivity().getSystemService(Context.TELEPHONY_SERVICE);
 
-        if (tel != null) {
+
+/*        if (tel != null) {
             CellInfo cellInfo = tel.getAllCellInfo().get(0);
             if (cellInfo instanceof CellInfoGsm) {
                 CellSignalStrengthGsm gsmSignalStrength = ((CellInfoGsm) cellInfo).getCellSignalStrength();
@@ -65,14 +65,14 @@ public class GalleryFragment extends Fragment {
             } else if (cellInfo instanceof CellInfoLte) {
                 CellSignalStrengthLte lteSignalStrength = ((CellInfoLte) cellInfo).getCellSignalStrength();
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    Log.d("Penis", "LTE signal strength: " + lteSignalStrength.getRsrq() + " dBm");
-                    galleryViewModel.setData("LTE signal param" + lteSignalStrength.getRsrq() + "rsrq" + lteSignalStrength.getRsrp() + "rsrp" + lteSignalStrength.getRssi() + "rssi" + lteSignalStrength.getRssnr() + "rssnr" + lteSignalStrength.getCqi() + "cqi" + lteSignalStrength.getDbm() + "dbm");
+                    Log.d("Penis", "LTE signal param" + lteSignalStrength.getRsrq() + "rsrq" + lteSignalStrength.getRsrp() + "rsrp" + lteSignalStrength.getRssnr() + "rssnr" + lteSignalStrength.getCqi() + "cqi" + lteSignalStrength.getDbm() + "dbm");
+                    //galleryViewModel.setData("LTE signal param" + lteSignalStrength.getRsrq() + "rsrq" + lteSignalStrength.getRsrp() + "rsrp" + lteSignalStrength.getRssi() + "rssi" + lteSignalStrength.getRssnr() + "rssnr" + lteSignalStrength.getCqi() + "cqi" + lteSignalStrength.getDbm() + "dbm");
                 }
             } else if (cellInfo instanceof CellInfoCdma) {
                 CellSignalStrengthCdma cdmaSignalStrength = ((CellInfoCdma) cellInfo).getCellSignalStrength();
                 Log.d("Penis", "CDMA signal strength: " + cdmaSignalStrength.getCdmaDbm() + " dBm");
             }
-        }
+        }*/
         tel.listen(myPhoneStateListener, PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
 
         return root;
@@ -92,9 +92,9 @@ public class GalleryFragment extends Fragment {
             List<CellSignalStrength> signalStrengthPercent = null;
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
                 // Now you can use the signalStrengthPercent as needed
-                //signalStrengthPercent = signalStrength.getCellSignalStrengths();
-                //galleryViewModel.setData("grg" + signalStrengthPercent);
-                //Log.d("Penis", "fer" +signalStrengthPercent);
+                signalStrengthPercent = signalStrength.getCellSignalStrengths();
+                galleryViewModel.setData("" + signalStrengthPercent);
+                Log.d("Penis", "fer" +signalStrengthPercent);
             }
         }
     }
