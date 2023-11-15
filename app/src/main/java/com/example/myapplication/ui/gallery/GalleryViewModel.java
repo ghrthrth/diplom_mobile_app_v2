@@ -1,23 +1,25 @@
 package com.example.myapplication.ui.gallery;
 
+import android.util.Log;
+import android.widget.TextView;
+
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
+import com.example.myapplication.R;
+
+import java.util.List;
+
 public class GalleryViewModel extends ViewModel {
+    private MutableLiveData<String> mText = new MutableLiveData<>();
 
-    private final MutableLiveData<String> mText;
-
-    public GalleryViewModel() {
-        mText = new MutableLiveData<>();
-        mText.setValue("ferf");
+    public void setData(String value) {
+        mText.setValue("Data" + value);
     }
 
-
-
-    public LiveData<String> getText() {
+    public LiveData<String> getData() {
         return mText;
     }
-
 
 }

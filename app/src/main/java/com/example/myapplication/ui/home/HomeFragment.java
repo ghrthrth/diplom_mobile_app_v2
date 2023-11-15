@@ -37,6 +37,22 @@ private FusedLocationProviderClient fusedLocationClient;
     private double lat;
     private double lon;
 
+    private final LocationCallback locationCallback = new LocationCallback() {
+        @Override
+        public void onLocationResult(@NonNull LocationResult locationResult) {
+            for (Location location : locationResult.getLocations()) {
+                double latitude = location.getLatitude();
+                double longitude = location.getLongitude();
+                lat = latitude;
+                lon = longitude;
+                ModelFactory factory = new ModelFactory(lat, lon);
+                HomeViewModel homeViewModel = new ViewModelProvider(HomeFragment.this, factory).get(HomeViewModel.class);
+                final TextView textView = binding.textHome;
+                homeViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
+            }
+        }
+    };
+
     public View onCreateView(@NonNull LayoutInflater inflater,
             ViewGroup container, Bundle savedInstanceState) {
     binding = FragmentHomeBinding.inflate(inflater, container, false);
@@ -55,11 +71,6 @@ private FusedLocationProviderClient fusedLocationClient;
         return root;
     }
 
-@Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        binding = null;
-    }
 
     public void getDeviceLocation() {
 
@@ -67,23 +78,6 @@ private FusedLocationProviderClient fusedLocationClient;
         LocationRequest locationRequest = LocationRequest.create();
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
         locationRequest.setInterval(10000); // Время между обновлениями в миллисекундах
-
-        LocationCallback locationCallback = new LocationCallback() {
-            @Override
-            public void onLocationResult(@NonNull LocationResult locationResult) {
-                for (Location location : locationResult.getLocations()) {
-                    double latitude = location.getLatitude();
-                    double longitude = location.getLongitude();
-                    lat = latitude;
-                    lon = longitude;
-                    ModelFactory factory = new ModelFactory(lat, lon);
-                    HomeViewModel homeViewModel = new ViewModelProvider(HomeFragment.this, factory).get(HomeViewModel.class);
-                    final TextView textView = binding.textHome;
-                    homeViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
-                }
-            }
-        };
-
 
         if (ActivityCompat.checkSelfPermission(binding.getRoot().getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(binding.getRoot().getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
@@ -97,8 +91,7 @@ private FusedLocationProviderClient fusedLocationClient;
         }
         fusedLocationClient.requestLocationUpdates(locationRequest,
                 locationCallback,
-                Looper.getMainLooper());
-
+                null);
     }
 
     @Override
@@ -126,5 +119,14 @@ private FusedLocationProviderClient fusedLocationClient;
             alert.show();
         }
         super.onResume();
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (fusedLocationClient != null) {
+            fusedLocationClient.removeLocationUpdates(locationCallback);
+        }
+        binding = null;
     }
 }
