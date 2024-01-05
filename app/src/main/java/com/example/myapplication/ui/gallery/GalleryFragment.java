@@ -4,8 +4,10 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.telephony.CellInfo;
 import android.telephony.CellInfoCdma;
 import android.telephony.CellInfoGsm;
@@ -21,6 +23,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -29,53 +32,40 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.myapplication.MainActivity;
+import com.example.myapplication.R;
+import com.example.myapplication.databinding.FragmentGalleryBinding;
 import com.example.myapplication.databinding.FragmentSlideshowBinding;
 
 import java.util.List;
+import java.util.Objects;
+
+import de.hdodenhof.circleimageview.CircleImageView;
 
 
 public class GalleryFragment extends Fragment {
     MyPhoneStateListener myPhoneStateListener;
     public TelephonyManager tel;
-    private FragmentSlideshowBinding binding;
+    private FragmentGalleryBinding binding;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
-
-        binding = FragmentSlideshowBinding.inflate(inflater, container, false);
-        View root = binding.getRoot();
         GalleryViewModel galleryViewModel =
                 new ViewModelProvider(this).get(GalleryViewModel.class);
-        final TextView textView = binding.textSlideshow;
-        galleryViewModel.getData().observe(getViewLifecycleOwner(), textView::setText);
-        myPhoneStateListener = new MyPhoneStateListener(galleryViewModel); // Initialize the MyPhoneStateListener and pass the galleryViewModel
-
-        // Register the PhoneStateListener to listen for signal strengths
+        binding = FragmentGalleryBinding.inflate(inflater, container, false);
+        View root = binding.getRoot();
+        myPhoneStateListener = new MyPhoneStateListener(galleryViewModel);
         tel = (TelephonyManager) requireActivity().getSystemService(Context.TELEPHONY_SERVICE);
-
-
-/*        if (tel != null) {
-            CellInfo cellInfo = tel.getAllCellInfo().get(0);
-            if (cellInfo instanceof CellInfoGsm) {
-                CellSignalStrengthGsm gsmSignalStrength = ((CellInfoGsm) cellInfo).getCellSignalStrength();
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    Log.d("Penis", "GSM signal strength: " + gsmSignalStrength.getRssi() + " dBm");
-                }
-            } else if (cellInfo instanceof CellInfoLte) {
-                CellSignalStrengthLte lteSignalStrength = ((CellInfoLte) cellInfo).getCellSignalStrength();
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    Log.d("Penis", "LTE signal param" + lteSignalStrength.getRsrq() + "rsrq" + lteSignalStrength.getRsrp() + "rsrp" + lteSignalStrength.getRssnr() + "rssnr" + lteSignalStrength.getCqi() + "cqi" + lteSignalStrength.getDbm() + "dbm");
-                    //galleryViewModel.setData("LTE signal param" + lteSignalStrength.getRsrq() + "rsrq" + lteSignalStrength.getRsrp() + "rsrp" + lteSignalStrength.getRssi() + "rssi" + lteSignalStrength.getRssnr() + "rssnr" + lteSignalStrength.getCqi() + "cqi" + lteSignalStrength.getDbm() + "dbm");
-                }
-            } else if (cellInfo instanceof CellInfoCdma) {
-                CellSignalStrengthCdma cdmaSignalStrength = ((CellInfoCdma) cellInfo).getCellSignalStrength();
-                Log.d("Penis", "CDMA signal strength: " + cdmaSignalStrength.getCdmaDbm() + " dBm");
-            }
-        }*/
         tel.listen(myPhoneStateListener, PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
+        final TextView textView = binding.textGallery;
+        galleryViewModel.getData().observe(getViewLifecycleOwner(), textView::setText);
+        final CircleImageView сircleImageView = binding.imageView3;
+        сircleImageView.setImageResource(R.drawable.test_new);
 
         return root;
+    }
+    public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
     }
 
     private static class MyPhoneStateListener extends PhoneStateListener {
@@ -94,7 +84,7 @@ public class GalleryFragment extends Fragment {
                 // Now you can use the signalStrengthPercent as needed
                 signalStrengthPercent = signalStrength.getCellSignalStrengths();
                 galleryViewModel.setData("" + signalStrengthPercent);
-                Log.d("Penis", "fer" +signalStrengthPercent);
+                int p = signalStrengthPercent.get(0).getDbm();
             }
         }
     }

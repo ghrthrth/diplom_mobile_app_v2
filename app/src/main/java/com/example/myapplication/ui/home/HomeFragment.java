@@ -16,6 +16,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -25,6 +26,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.example.myapplication.R;
 import com.example.myapplication.databinding.FragmentHomeBinding;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
@@ -43,7 +45,6 @@ private FusedLocationProviderClient fusedLocationClient;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
     private double lat;
     private double lon;
-    Handler handler = new Handler();
 
     private final LocationCallback locationCallback = new LocationCallback() {
         @Override
@@ -57,6 +58,9 @@ private FusedLocationProviderClient fusedLocationClient;
                 HomeViewModel homeViewModel = new ViewModelProvider(HomeFragment.this, factory).get(HomeViewModel.class);
                 final TextView textView = binding.textHome;
                 homeViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
+                final ProgressBar progressBar = binding.progressBar;
+                progressBar.setVisibility(View.GONE);
+
             }
         }
     };

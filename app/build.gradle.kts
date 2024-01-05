@@ -45,4 +45,5 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
     implementation ("com.google.android.gms:play-services-location:21.0.1")
     implementation ("androidx.lifecycle:lifecycle-viewmodel:2.6.2")
+    implementation ("de.hdodenhof:circleimageview:3.1.0")
 }
