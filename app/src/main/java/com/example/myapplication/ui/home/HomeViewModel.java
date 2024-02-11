@@ -12,7 +12,7 @@ public class HomeViewModel extends ViewModel {
 
     public HomeViewModel(double lat, double lon) {
         mText = new MutableLiveData<>();
-        mText.setValue("This is home fragment" + lat + " " + lon);
+        mText.setValue("Ваши координаты - " + lat + "долготы " + lon + "широты");
         //Log.d("Sex", "fe" + id);
     }
 

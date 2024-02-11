@@ -34,6 +34,14 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.material.snackbar.Snackbar;
+import com.yandex.mapkit.Animation;
+import com.yandex.mapkit.MapKitFactory;
+import com.yandex.mapkit.geometry.Point;
+import com.yandex.mapkit.map.CameraPosition;
+import com.yandex.mapkit.map.PlacemarkCreatedCallback;
+import com.yandex.mapkit.map.PlacemarkMapObject;
+import com.yandex.mapkit.mapview.MapView;
+import com.yandex.runtime.image.ImageProvider;
 
 import java.util.Objects;
 
@@ -41,10 +49,13 @@ import java.util.Objects;
 public class HomeFragment extends Fragment {
 
 private FragmentHomeBinding binding;
+private MapView mapView;
 private FusedLocationProviderClient fusedLocationClient;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
     private double lat;
     private double lon;
+
+
 
     private final LocationCallback locationCallback = new LocationCallback() {
         @Override
@@ -60,16 +71,32 @@ private FusedLocationProviderClient fusedLocationClient;
                 homeViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
                 final ProgressBar progressBar = binding.progressBar;
                 progressBar.setVisibility(View.GONE);
+                boolean isPlacemarkAdded = false;
 
+                if (!isPlacemarkAdded) {
+                    PlacemarkMapObject placemark = mapView.getMap().getMapObjects().addPlacemark(new Point(latitude, longitude));
+
+                    placemark.setIcon(ImageProvider.fromResource(getContext(), R.drawable.pins));
+
+                    placemark.setOpacity(0.8f);
+                    placemark.setDraggable(true);
+
+                    isPlacemarkAdded = true;
+                    Animation animation = new Animation(Animation.Type.LINEAR, 2f);
+                    CameraPosition cameraPosition = new CameraPosition(new Point(latitude, longitude), 15f, 0f, 0f);
+                    mapView.getMap().move(cameraPosition, animation, null);
+
+                }
             }
         }
     };
+
 
     public View onCreateView(@NonNull LayoutInflater inflater,
             ViewGroup container, Bundle savedInstanceState) {
     binding = FragmentHomeBinding.inflate(inflater, container, false);
     View root = binding.getRoot();
-
+    mapView = root.findViewById(R.id.mapview);
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(binding.getRoot().getContext());
         // Проверяем разрешение на доступ к местоположению
@@ -80,6 +107,7 @@ private FusedLocationProviderClient fusedLocationClient;
             // Если разрешение уже предоставлено, запускаем метод получения местоположения
             getDeviceLocation();
         }
+
 
         return root;
     }
@@ -127,6 +155,21 @@ private FusedLocationProviderClient fusedLocationClient;
             // Если разрешение уже предоставлено, запускаем метод получения местоположения
             getDeviceLocation();
         }
+
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        MapKitFactory.getInstance().onStart();
+        mapView.onStart();
+    }
+
+    @Override
+    public void onStop() {
+        MapKitFactory.getInstance().onStop();
+        mapView.onStop();
+        super.onStop();
     }
 
     @Override
