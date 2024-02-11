@@ -54,10 +54,11 @@ private FusedLocationProviderClient fusedLocationClient;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
     private double lat;
     private double lon;
-
+    private boolean isPlacemarkAdded = false;
 
 
     private final LocationCallback locationCallback = new LocationCallback() {
+
         @Override
         public void onLocationResult(@NonNull LocationResult locationResult) {
             for (Location location : locationResult.getLocations()) {
@@ -71,7 +72,6 @@ private FusedLocationProviderClient fusedLocationClient;
                 homeViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
                 final ProgressBar progressBar = binding.progressBar;
                 progressBar.setVisibility(View.GONE);
-                boolean isPlacemarkAdded = false;
 
                 if (!isPlacemarkAdded) {
                     PlacemarkMapObject placemark = mapView.getMap().getMapObjects().addPlacemark(new Point(latitude, longitude));
@@ -178,6 +178,7 @@ private FusedLocationProviderClient fusedLocationClient;
         if (fusedLocationClient != null) {
             fusedLocationClient.removeLocationUpdates(locationCallback);
         }
+        isPlacemarkAdded = false;
         binding = null;
     }
 }

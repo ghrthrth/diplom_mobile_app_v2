@@ -5,6 +5,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -23,8 +24,10 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
@@ -36,10 +39,19 @@ import com.example.myapplication.R;
 import com.example.myapplication.databinding.FragmentGalleryBinding;
 import com.example.myapplication.databinding.FragmentSlideshowBinding;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 
 import de.hdodenhof.circleimageview.CircleImageView;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 
 public class GalleryFragment extends Fragment {
@@ -60,16 +72,32 @@ public class GalleryFragment extends Fragment {
         final TextView textView = binding.textGallery;
         galleryViewModel.getData().observe(getViewLifecycleOwner(), textView::setText);
         final CircleImageView сircleImageView = binding.imageView3;
+        final Button send = binding.send;
         сircleImageView.setImageResource(R.drawable.test_new);
+
+        send.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Get the username and dbm values
+                String lat = "lat"; // Replace with the actual username
+                String lon = "lon"; // Replace with the actual username
+                int dbm = myPhoneStateListener.getDbm();
+
+                // Send the username and dbm values to the server
+                sendToServer(lat, lon, dbm);
+            }
+        });
 
         return root;
     }
+
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
     }
 
     private static class MyPhoneStateListener extends PhoneStateListener {
         GalleryViewModel galleryViewModel;
+        private int dbm;
 
         public MyPhoneStateListener(GalleryViewModel galleryViewModel) {
             this.galleryViewModel = galleryViewModel;
@@ -84,8 +112,12 @@ public class GalleryFragment extends Fragment {
                 // Now you can use the signalStrengthPercent as needed
                 signalStrengthPercent = signalStrength.getCellSignalStrengths();
                 galleryViewModel.setData("" + signalStrengthPercent);
-                int p = signalStrengthPercent.get(0).getDbm();
+                dbm = signalStrengthPercent.get(0).getDbm();
             }
+        }
+
+        public int getDbm() {
+            return dbm;
         }
     }
 
@@ -93,5 +125,70 @@ public class GalleryFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         binding = null;
+    }
+
+    private void sendToServer(String lat, String lon, int dbm) {
+        // Create an instance of the HttpRequestTask and execute it
+        HttpRequestTask httpRequestTask = new HttpRequestTask();
+        httpRequestTask.execute(lat, lon, String.valueOf(dbm));
+    }
+
+    private class HttpRequestTask extends AsyncTask<String, Void, String> {
+
+        @Override
+        protected String doInBackground(String... params) {
+            String lat = params[0];
+            String lon = params[1];
+            String dbm = params[2];
+
+            JSONObject json = new JSONObject();
+
+            try {
+                json.put("lat", lat);
+                json.put("lon", lon);
+                json.put("dbm", dbm);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+            OkHttpClient client = new OkHttpClient();
+            MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+            RequestBody requestBody = RequestBody.create(JSON, json.toString());
+            Request request = new Request.Builder()
+                    .url("https://claimbe.store/diplom/index.php")
+                    .post(requestBody)
+                    .build();
+
+            try {
+                Response response = client.newCall(request).execute();
+                assert response.body() != null;
+                return response.body().string();
+            } catch (IOException e) {
+                e.printStackTrace();
+                return "Error: " + e.getMessage();
+            }
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            try {
+                JSONObject jsonResponse = new JSONObject(result);
+                if (jsonResponse.has("success")) {
+                    // Display a success message
+                    Toast.makeText(getContext(), jsonResponse.getString("success"), Toast.LENGTH_SHORT).show();
+                } else if (jsonResponse.has("error")) {
+                    // Display an error message
+                    Toast.makeText(getContext(), "Ошибка: " + jsonResponse.getString("error") + jsonResponse.getString("dds") + jsonResponse.getString("dda") + jsonResponse.getString("dd"), Toast.LENGTH_SHORT).show();
+                } else {
+                    // Handle other cases or unknown response
+                    Toast.makeText(getContext(), "Неизвестный ответ от сервера", Toast.LENGTH_SHORT).show();
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+                // Handle JSON parsing error
+                Toast.makeText(getContext(), "Ошибка при обработке ответа от сервера" + e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        }
+
     }
 }
