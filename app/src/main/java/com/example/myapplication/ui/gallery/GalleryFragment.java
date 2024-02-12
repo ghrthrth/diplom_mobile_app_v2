@@ -2,13 +2,18 @@ package com.example.myapplication.ui.gallery;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.location.Location;
+import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.Settings;
 import android.telephony.CellInfo;
 import android.telephony.CellInfoCdma;
 import android.telephony.CellInfoGsm;
@@ -30,6 +35,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
@@ -38,6 +44,19 @@ import com.example.myapplication.MainActivity;
 import com.example.myapplication.R;
 import com.example.myapplication.databinding.FragmentGalleryBinding;
 import com.example.myapplication.databinding.FragmentSlideshowBinding;
+import com.example.myapplication.ui.home.HomeFragment;
+import com.example.myapplication.ui.home.HomeViewModel;
+import com.example.myapplication.ui.home.ModelFactory;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
+import com.google.android.gms.location.LocationServices;
+import com.yandex.mapkit.Animation;
+import com.yandex.mapkit.geometry.Point;
+import com.yandex.mapkit.map.CameraPosition;
+import com.yandex.mapkit.map.PlacemarkMapObject;
+import com.yandex.runtime.image.ImageProvider;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -59,6 +78,24 @@ public class GalleryFragment extends Fragment {
     public TelephonyManager tel;
     private FragmentGalleryBinding binding;
 
+    private FusedLocationProviderClient fusedLocationClient;
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
+    private double lat;
+    private double lon;
+
+    private final LocationCallback locationCallback = new LocationCallback() {
+
+        @Override
+        public void onLocationResult(@NonNull LocationResult locationResult) {
+            for (Location location : locationResult.getLocations()) {
+                double latitude = location.getLatitude();
+                double longitude = location.getLongitude();
+                lat = latitude;
+                lon = longitude;
+            }
+        }
+    };
+
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -71,16 +108,22 @@ public class GalleryFragment extends Fragment {
         tel.listen(myPhoneStateListener, PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
         final TextView textView = binding.textGallery;
         galleryViewModel.getData().observe(getViewLifecycleOwner(), textView::setText);
-        final CircleImageView сircleImageView = binding.imageView3;
+        final CircleImageView circleImageView = binding.imageView3;
         final Button send = binding.send;
-        сircleImageView.setImageResource(R.drawable.test_new);
+        circleImageView.setImageResource(R.drawable.test_new);
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(binding.getRoot().getContext());
+        // Проверяем разрешение на доступ к местоположению
+        if (ActivityCompat.checkSelfPermission(binding.getRoot().getContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // Если разрешение не предоставлено, запрашиваем его у пользователя
+            ActivityCompat.requestPermissions((Activity) binding.getRoot().getContext(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_PERMISSION_REQUEST_CODE);
+        } else {
+            // Если разрешение уже предоставлено, запускаем метод получения местоположения
+            getDeviceLocation();
+        }
 
         send.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Get the username and dbm values
-                String lat = "lat"; // Replace with the actual username
-                String lon = "lon"; // Replace with the actual username
                 int dbm = myPhoneStateListener.getDbm();
 
                 // Send the username and dbm values to the server
@@ -89,6 +132,20 @@ public class GalleryFragment extends Fragment {
         });
 
         return root;
+    }
+
+    public void getDeviceLocation() {
+        // Запрашиваем обновления местоположения
+        LocationRequest locationRequest = LocationRequest.create();
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        locationRequest.setInterval(10000); // Время между обновлениями в миллисекундах
+
+        if (ActivityCompat.checkSelfPermission(binding.getRoot().getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(binding.getRoot().getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        fusedLocationClient.requestLocationUpdates(locationRequest,
+                locationCallback,
+                null);
     }
 
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
@@ -121,16 +178,51 @@ public class GalleryFragment extends Fragment {
         }
     }
 
+    @SuppressLint("ShowToast")
+    public void onResume() {
+        LocationManager locationManager = (LocationManager) requireActivity().getSystemService(Context.LOCATION_SERVICE);
+        if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(binding.getRoot().getContext());
+            builder.setMessage("GPS выключен, пожалуйста, включите его для продолжения")
+                    .setCancelable(false)
+                    .setPositiveButton("Перейти в настройки", (dialog, id) -> {
+                        Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                        startActivity(intent);
+                    });
+            AlertDialog alert = builder.create();
+            alert.show();
+        }
+        super.onResume();
+        if (ActivityCompat.checkSelfPermission(binding.getRoot().getContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // Если разрешение не предоставлено, запрашиваем его у пользователя
+            ActivityCompat.requestPermissions((Activity) binding.getRoot().getContext(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_PERMISSION_REQUEST_CODE);
+            Toast.makeText(binding.getRoot().getContext(), "Необходимо предоставить разрешение на доступ к местоположению в настройках приложения", Toast.LENGTH_SHORT).show();
+            // Создаем задержку в 3 секунды
+
+            // Удаляем сообщение об ошибке
+            Toast.makeText(binding.getRoot().getContext(), "", Toast.LENGTH_SHORT).cancel();
+            // Завершаем приложение
+            requireActivity().finishAffinity();
+        } else {
+            // Если разрешение уже предоставлено, запускаем метод получения местоположения
+            getDeviceLocation();
+        }
+
+    }
+
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        if (fusedLocationClient != null) {
+            fusedLocationClient.removeLocationUpdates(locationCallback);
+        }
         binding = null;
     }
 
-    private void sendToServer(String lat, String lon, int dbm) {
+    private void sendToServer(double lat, double lon, int dbm) {
         // Create an instance of the HttpRequestTask and execute it
         HttpRequestTask httpRequestTask = new HttpRequestTask();
-        httpRequestTask.execute(lat, lon, String.valueOf(dbm));
+        httpRequestTask.execute(String.valueOf(lat), String.valueOf(lon), String.valueOf(dbm));
     }
 
     private class HttpRequestTask extends AsyncTask<String, Void, String> {
