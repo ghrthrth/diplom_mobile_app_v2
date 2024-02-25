@@ -2,13 +2,13 @@
     <string name="app_name">My Application</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
-    <string name="nav_header_title">Android Studio</string>
+    <string name="nav_header_title">Будьте полезны в составлении карты покрытия Беларуси!</string>
     <string name="nav_header_subtitle">android.studio@android.com</string>
     <string name="nav_header_desc">Navigation header</string>
     <string name="action_settings">Settings</string>
 
-    <string name="menu_home">Home</string>
-    <string name="menu_gallery">Gallery</string>
-    <string name="menu_slideshow">Slideshow</string>
-    <string name="text_btn_send">отправить</string>
+    <string name="menu_home">Мое местоположение</string>
+    <string name="menu_gallery">Отправить данные</string>
+    <string name="text_btn_send">Отправить данные</string>
+    <string name="text_wrong">*Отправляя данные, вы даёте согласие на обработку персональных данных</string>
 </resources>

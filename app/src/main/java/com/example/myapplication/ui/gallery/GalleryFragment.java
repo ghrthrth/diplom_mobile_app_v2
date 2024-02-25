@@ -6,31 +6,20 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
 import android.provider.Settings;
-import android.telephony.CellInfo;
-import android.telephony.CellInfoCdma;
-import android.telephony.CellInfoGsm;
-import android.telephony.CellInfoLte;
 import android.telephony.CellSignalStrength;
-import android.telephony.CellSignalStrengthCdma;
-import android.telephony.CellSignalStrengthGsm;
 import android.telephony.CellSignalStrengthLte;
 import android.telephony.PhoneStateListener;
 import android.telephony.SignalStrength;
 import android.telephony.TelephonyManager;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -40,30 +29,19 @@ import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.example.myapplication.MainActivity;
 import com.example.myapplication.R;
 import com.example.myapplication.databinding.FragmentGalleryBinding;
-import com.example.myapplication.databinding.FragmentSlideshowBinding;
-import com.example.myapplication.ui.home.HomeFragment;
-import com.example.myapplication.ui.home.HomeViewModel;
-import com.example.myapplication.ui.home.ModelFactory;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
-import com.yandex.mapkit.Animation;
-import com.yandex.mapkit.geometry.Point;
-import com.yandex.mapkit.map.CameraPosition;
-import com.yandex.mapkit.map.PlacemarkMapObject;
-import com.yandex.runtime.image.ImageProvider;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Objects;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 import okhttp3.MediaType;
@@ -103,14 +81,16 @@ public class GalleryFragment extends Fragment {
                 new ViewModelProvider(this).get(GalleryViewModel.class);
         binding = FragmentGalleryBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
-        myPhoneStateListener = new MyPhoneStateListener(galleryViewModel);
+        final CircleImageView circleImageView = binding.imageView3;
+        //circleImageView.setImageResource(R.drawable.test_new);
+        myPhoneStateListener = new MyPhoneStateListener(galleryViewModel, circleImageView);
         tel = (TelephonyManager) requireActivity().getSystemService(Context.TELEPHONY_SERVICE);
         tel.listen(myPhoneStateListener, PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
+        String operatorName = tel.getNetworkOperatorName();
+
         final TextView textView = binding.textGallery;
         galleryViewModel.getData().observe(getViewLifecycleOwner(), textView::setText);
-        final CircleImageView circleImageView = binding.imageView3;
         final Button send = binding.send;
-        circleImageView.setImageResource(R.drawable.test_new);
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(binding.getRoot().getContext());
         // Проверяем разрешение на доступ к местоположению
         if (ActivityCompat.checkSelfPermission(binding.getRoot().getContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -127,7 +107,7 @@ public class GalleryFragment extends Fragment {
                 int dbm = myPhoneStateListener.getDbm();
 
                 // Send the username and dbm values to the server
-                sendToServer(lat, lon, dbm);
+                sendToServer(lat, lon, Math.abs(dbm), operatorName);
             }
         });
 
@@ -155,9 +135,10 @@ public class GalleryFragment extends Fragment {
     private static class MyPhoneStateListener extends PhoneStateListener {
         GalleryViewModel galleryViewModel;
         private int dbm;
-
-        public MyPhoneStateListener(GalleryViewModel galleryViewModel) {
+        private CircleImageView circleImageView;
+        public MyPhoneStateListener(GalleryViewModel galleryViewModel, CircleImageView circleImageView) {
             this.galleryViewModel = galleryViewModel;
+            this.circleImageView = circleImageView;
         }
 
         @Override
@@ -165,11 +146,19 @@ public class GalleryFragment extends Fragment {
         public void onSignalStrengthsChanged(SignalStrength signalStrength) {
             super.onSignalStrengthsChanged(signalStrength);
             List<CellSignalStrength> signalStrengthPercent = null;
+
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
                 // Now you can use the signalStrengthPercent as needed
                 signalStrengthPercent = signalStrength.getCellSignalStrengths();
-                galleryViewModel.setData("" + signalStrengthPercent);
                 dbm = signalStrengthPercent.get(0).getDbm();
+                galleryViewModel.setData("Уровень сигнала: " + dbm + " Дб");
+                if (dbm >= -70) {
+                    circleImageView.setImageResource(R.drawable.signal_green);
+                } else if (dbm >= -80) {
+                    circleImageView.setImageResource(R.drawable.signal_yellow);
+                } else if (dbm >= -90) {
+                    circleImageView.setImageResource(R.drawable.signal_red);
+                }
             }
         }
 
@@ -219,10 +208,10 @@ public class GalleryFragment extends Fragment {
         binding = null;
     }
 
-    private void sendToServer(double lat, double lon, int dbm) {
+    private void sendToServer(double lat, double lon, int dbm, String operator) {
         // Create an instance of the HttpRequestTask and execute it
         HttpRequestTask httpRequestTask = new HttpRequestTask();
-        httpRequestTask.execute(String.valueOf(lat), String.valueOf(lon), String.valueOf(dbm));
+        httpRequestTask.execute(String.valueOf(lat), String.valueOf(lon), String.valueOf(dbm), operator);
     }
 
     private class HttpRequestTask extends AsyncTask<String, Void, String> {
@@ -232,6 +221,7 @@ public class GalleryFragment extends Fragment {
             String lat = params[0];
             String lon = params[1];
             String dbm = params[2];
+            String operator = params[3];
 
             JSONObject json = new JSONObject();
 
@@ -239,6 +229,7 @@ public class GalleryFragment extends Fragment {
                 json.put("lat", lat);
                 json.put("lon", lon);
                 json.put("dbm", dbm);
+                json.put("operator", operator);
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -270,7 +261,7 @@ public class GalleryFragment extends Fragment {
                     Toast.makeText(getContext(), jsonResponse.getString("success"), Toast.LENGTH_SHORT).show();
                 } else if (jsonResponse.has("error")) {
                     // Display an error message
-                    Toast.makeText(getContext(), "Ошибка: " + jsonResponse.getString("error") + jsonResponse.getString("dds") + jsonResponse.getString("dda") + jsonResponse.getString("dd"), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), "Ошибка: " + jsonResponse.getString("error") + jsonResponse.getString("dbm") + jsonResponse.getString("lat") + jsonResponse.getString("lon") + jsonResponse.getString("operator"), Toast.LENGTH_SHORT).show();
                 } else {
                     // Handle other cases or unknown response
                     Toast.makeText(getContext(), "Неизвестный ответ от сервера", Toast.LENGTH_SHORT).show();
