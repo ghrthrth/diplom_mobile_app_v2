@@ -82,7 +82,7 @@ public class GalleryFragment extends Fragment {
         binding = FragmentGalleryBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
         final CircleImageView circleImageView = binding.imageView3;
-        //circleImageView.setImageResource(R.drawable.test_new);
+        circleImageView.setImageResource(R.drawable.test_new);
         myPhoneStateListener = new MyPhoneStateListener(galleryViewModel, circleImageView);
         tel = (TelephonyManager) requireActivity().getSystemService(Context.TELEPHONY_SERVICE);
         tel.listen(myPhoneStateListener, PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
