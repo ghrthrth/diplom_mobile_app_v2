@@ -240,7 +240,7 @@ public class GalleryFragment extends Fragment {
             MediaType JSON = MediaType.parse("application/json; charset=utf-8");
             RequestBody requestBody = RequestBody.create(JSON, json.toString());
             Request request = new Request.Builder()
-                    .url("https://claimbe.store/diplom/api/add.php")
+                    .url("https://claimbes.store/diplom/api/add.php")
                     .post(requestBody)
                     .build();
 
