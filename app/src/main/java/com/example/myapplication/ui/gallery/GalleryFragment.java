@@ -4,6 +4,7 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -12,14 +13,16 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.telephony.CellSignalStrength;
-import android.telephony.CellSignalStrengthLte;
 import android.telephony.PhoneStateListener;
 import android.telephony.SignalStrength;
 import android.telephony.TelephonyManager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -107,9 +110,54 @@ public class GalleryFragment extends Fragment {
                 int dbm = myPhoneStateListener.getDbm();
 
                 // Send the username and dbm values to the server
-                sendToServer(lat, lon, Math.abs(dbm), operatorName);
+                final AlertDialog.Builder popDialog = new AlertDialog.Builder(binding.getRoot().getContext());
+
+                LinearLayout linearLayout = new LinearLayout(binding.getRoot().getContext());
+                final RatingBar rating = new RatingBar(binding.getRoot().getContext());
+
+                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                );
+                rating.setLayoutParams(lp);
+                rating.setNumStars(5);
+                rating.setStepSize(1);
+
+                //add ratingBar to linearLayout
+                linearLayout.addView(rating);
+
+
+                popDialog.setIcon(android.R.drawable.btn_star_big_on);
+                popDialog.setTitle("Поставьте оценку качества сигнала по своим ощущениям: ");
+
+                //add linearLayout to dailog
+                popDialog.setView(linearLayout);
+
+                // Button OK
+                popDialog.setPositiveButton(android.R.string.ok,
+                                new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        Toast.makeText(binding.getRoot().getContext(), "Вы выбрали оценку: " + rating.getProgress(), Toast.LENGTH_SHORT).show();
+                                        dialog.dismiss();
+                                        sendToServer(lat, lon, Math.abs(dbm), operatorName, rating.getProgress());
+                                    }
+
+                                })
+
+                        // Button Cancel
+                        .setNegativeButton("Cancel",
+                                new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int id) {
+                                        dialog.cancel();
+                                    }
+                                });
+
+                popDialog.create();
+                popDialog.show();
             }
         });
+
+
 
         return root;
     }
@@ -142,9 +190,7 @@ public class GalleryFragment extends Fragment {
         }
 
         @Override
-        @SuppressLint("SetTextI18n")
         public void onSignalStrengthsChanged(SignalStrength signalStrength) {
-            circleImageView.setImageResource(R.drawable.test_new);
 
             super.onSignalStrengthsChanged(signalStrength);
             List<CellSignalStrength> signalStrengthPercent = null;
@@ -153,7 +199,9 @@ public class GalleryFragment extends Fragment {
                 // Now you can use the signalStrengthPercent as needed
                 signalStrengthPercent = signalStrength.getCellSignalStrengths();
                 dbm = signalStrengthPercent.get(0).getDbm();
+                Log.d("erfreg", "ferffr" + dbm);
                 galleryViewModel.setData("Уровень сигнала: " + dbm + " Дб");
+
                 if (dbm >= -70) {
                     circleImageView.setImageResource(R.drawable.signal_green);
                 } else if (dbm >= -80) {
@@ -210,10 +258,10 @@ public class GalleryFragment extends Fragment {
         binding = null;
     }
 
-    private void sendToServer(double lat, double lon, int dbm, String operator) {
+    private void sendToServer(double lat, double lon, int dbm, String operator, int stars) {
         // Create an instance of the HttpRequestTask and execute it
         HttpRequestTask httpRequestTask = new HttpRequestTask();
-        httpRequestTask.execute(String.valueOf(lat), String.valueOf(lon), String.valueOf(dbm), operator);
+        httpRequestTask.execute(String.valueOf(lat), String.valueOf(lon), String.valueOf(dbm), operator, String.valueOf(stars));
     }
 
     private class HttpRequestTask extends AsyncTask<String, Void, String> {
@@ -224,6 +272,7 @@ public class GalleryFragment extends Fragment {
             String lon = params[1];
             String dbm = params[2];
             String operator = params[3];
+            String stars = params[4];
 
             JSONObject json = new JSONObject();
 
@@ -232,6 +281,7 @@ public class GalleryFragment extends Fragment {
                 json.put("lon", lon);
                 json.put("dbm", dbm);
                 json.put("operator", operator);
+                json.put("stars", stars);
             } catch (JSONException e) {
                 e.printStackTrace();
             }
