@@ -107,7 +107,7 @@ public class GalleryFragment extends Fragment {
         send.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                int dbm = myPhoneStateListener.getDbm();
+
 
                 // Send the username and dbm values to the server
                 final AlertDialog.Builder popDialog = new AlertDialog.Builder(binding.getRoot().getContext());
@@ -128,7 +128,9 @@ public class GalleryFragment extends Fragment {
 
 
                 popDialog.setIcon(android.R.drawable.btn_star_big_on);
-                popDialog.setTitle("Поставьте оценку качества сигнала по своим ощущениям: ");
+                popDialog.setTitle("Поставьте оценку качества сигнала");
+                popDialog.setMessage("Поставьте оценку качества сигнала по своим ощущениям, это поможет нам более объективно сделать вывод о качестве вашего сигнала");
+
 
                 //add linearLayout to dailog
                 popDialog.setView(linearLayout);
@@ -139,6 +141,7 @@ public class GalleryFragment extends Fragment {
                                     public void onClick(DialogInterface dialog, int which) {
                                         Toast.makeText(binding.getRoot().getContext(), "Вы выбрали оценку: " + rating.getProgress(), Toast.LENGTH_SHORT).show();
                                         dialog.dismiss();
+                                        int dbm = myPhoneStateListener.getDbm();
                                         sendToServer(lat, lon, Math.abs(dbm), operatorName, rating.getProgress());
                                     }
 
@@ -191,10 +194,9 @@ public class GalleryFragment extends Fragment {
 
         @Override
         public void onSignalStrengthsChanged(SignalStrength signalStrength) {
-
             super.onSignalStrengthsChanged(signalStrength);
             List<CellSignalStrength> signalStrengthPercent = null;
-
+            circleImageView.setImageResource(R.drawable.signal_green);
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
                 // Now you can use the signalStrengthPercent as needed
                 signalStrengthPercent = signalStrength.getCellSignalStrengths();
@@ -204,9 +206,9 @@ public class GalleryFragment extends Fragment {
 
                 if (dbm >= -70) {
                     circleImageView.setImageResource(R.drawable.signal_green);
-                } else if (dbm >= -80) {
+                } else if (dbm >= -90 && dbm < -80) {
                     circleImageView.setImageResource(R.drawable.signal_yellow);
-                } else if (dbm >= -90) {
+                } else if (dbm < -90) {
                     circleImageView.setImageResource(R.drawable.signal_red);
                 }
             }
