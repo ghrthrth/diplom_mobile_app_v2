@@ -32,7 +32,6 @@ android {
 }
 
 dependencies {
-
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.squareup.okhttp3:okhttp:4.9.1")
     implementation("com.google.android.material:material:1.10.0")
@@ -48,4 +47,6 @@ dependencies {
     implementation ("com.google.android.gms:play-services-location:21.0.1")
     implementation ("androidx.lifecycle:lifecycle-viewmodel:2.6.2")
     implementation ("de.hdodenhof:circleimageview:3.1.0")
+    implementation ("com.airbnb.android:lottie:6.4.0")
+    implementation ("com.intuit.sdp:sdp-android:1.1.1")
 }
